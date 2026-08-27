@@ -1,0 +1,11 @@
+# 敏感凭据，禁止入库
+.qoder/skills/tuitui-bot/config.yaml
+
+# 第三方 SDK 源码参考 / 打包产物
+package/
+*.tgz
+
+# 测试产物
+test.png
+__pycache__/
+*.pyc
