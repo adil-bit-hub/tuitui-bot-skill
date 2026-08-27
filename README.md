@@ -83,4 +83,4 @@ python .qoder/skills/tuitui-bot/scripts/tuitui_bot.py send-interactive \
 
 ## 许可
 
-仅供内部学习使用；推推为 360 内部产品，机器人能力开通与使用请遵循公司内部规范。
+仅供内部学习使用。
