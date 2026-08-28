@@ -14,7 +14,7 @@
 
 它首先是一个**命令行工具**，人工可直接使用；同时附带 `SKILL.md` 指令文档，
 可被任何能执行 shell 命令的 AI Agent 加载为 skill
-（[Qoder](https://qoder.com)、Claude Code、Cursor 等），不绑定任何特定平台。
+（Qoder、Claude Code、Cursor 等），不绑定任何特定平台。
 
 ## 目录结构
 
@@ -104,8 +104,8 @@ python scripts/tuitui_bot.py recall --to-account zhangsan --msgid "7678769490990
 
 加载本 skill 后直接对 Agent 说自然语言即可，例如：
 
-- “给 fengzhao 发消息：记得打卡”
-- “把这张图发给 fengzhao”
+- “给 zhangsan 发消息：记得打卡”
+- “把这张图发给 zhangsan”
 - “给某群发一个审批卡片”
 - “撤回刚才发的消息”
 
@@ -127,5 +127,4 @@ python scripts/tuitui_bot.py recall --to-account zhangsan --msgid "7678769490990
 
 - 交互卡片如需处理按钮点击回调，需在推推后台配置 Webhook；本工具只负责发送与撤回。
 - 消息内容支持 Markdown，交互式卡片除外。
-- 推推为 360 内部产品，机器人能力开通与使用请遵循公司内部规范。
 - 官方 SDK 文档：<https://www.npmjs.com/package/@qihoo/tuitui-bot-sdk>
