@@ -82,6 +82,26 @@ class TuituiBot:
             "account": str(data.get("robot_account", "")).strip(),
         }
 
+    def list_groups(self):
+        """查询机器人所在的所有群，返回 [{group_id, name}, ...]。
+        获取群 ID 的方法：先把机器人拉进目标群，再调用本接口。"""
+        data = self._request("GET", "/group/robot/in")
+        return data.get("groups") or []
+
+    def recall(self, target, message_id):
+        """撤回已发送的消息。target 为 build_target 产物，须为单一目标。"""
+        payload = {}
+        if target.get("togroups"):
+            payload["togroups"] = [{"group": g, "msgid": message_id}
+                                   for g in target["togroups"]]
+        elif target.get("tousers"):
+            payload["tousers"] = [{"user": u, "msgid": message_id}
+                                  for u in target["tousers"]]
+        else:
+            raise ValueError("撤回仅支持 --to-group 或 --to-account")
+        payload["msgtype"] = "recall"
+        return self._request("POST", "/message/custom/modify", payload)
+
     # -- 文件上传 -----------------------------------------------------------
 
     def upload(self, content: bytes, filename: str, media_type: str) -> str:
@@ -294,6 +314,12 @@ def main(argv=None):
 
     p = sub.add_parser("info", help="查询机器人信息，验证凭据是否有效")
 
+    p = sub.add_parser("groups", help="列出机器人所在的所有群及其群 ID")
+
+    p = sub.add_parser("recall", help="撤回已发送的消息(仅限单一目标)")
+    add_target_args(p)
+    p.add_argument("--msgid", required=True, help="要撤回的消息 ID")
+
     p = sub.add_parser("send-text", help="发送文本消息")
     add_target_args(p)
     p.add_argument("--text", required=True, help="消息内容，支持 Markdown")
@@ -328,6 +354,10 @@ def main(argv=None):
             emit(bot.info())
             return 0
 
+        if args.command == "groups":
+            emit(bot.list_groups())
+            return 0
+
         target = build_target(args.to_account, args.to_uid, args.to_group)
 
         if args.command == "send-text":
@@ -353,6 +383,13 @@ def main(argv=None):
                 raise ValueError("交互式卡片仅支持恰好一个接收目标")
             interactive = build_interactive(args)
             emit(bot.send_interactive(target, interactive))
+        elif args.command == "recall":
+            count = (len(target.get("tousers", []))
+                     + len(target.get("touids", []))
+                     + len(target.get("togroups", [])))
+            if count != 1:
+                raise ValueError("撤回仅支持恰好一个接收目标")
+            emit(bot.recall(target, args.msgid))
         return 0
     except (TuituiApiError, ValueError, FileNotFoundError,
             requests.RequestException) as exc:

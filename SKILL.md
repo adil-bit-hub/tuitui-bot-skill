@@ -1,6 +1,6 @@
 ---
 name: tuitui-bot
-description: 通过360推推机器人向指定人员或群聊发送文本、图片、文件和交互式卡片消息。当用户要求给推推里的某人/某群发消息、发图、发文件、发交互卡片，或管理推推机器人凭据(新增/查看机器人配置)时使用。
+description: 通过360推推机器人向指定人员或群聊发送文本、图片、文件和交互式卡片消息，并可撤回已发送消息。当用户要求给推推里的某人/某群发消息、发图、发文件、发交互卡片、撤回消息，或管理推推机器人凭据(新增/查看机器人配置)时使用。
 ---
 
 # 推推机器人消息发送
@@ -10,25 +10,51 @@ Python 实现的推推机器人客户端，等价于官方 `@qihoo/tuitui-bot-sd
 
 ## 快速开始
 
-脚本路径固定为 `.qoder/skills/tuitui-bot/scripts/tuitui_bot.py`（相对工作区）。
+脚本路径固定为 `.qoder/skills/tuitui-bot/scripts/tuitui_bot.py`（相对工作区；
+在本 skill 目录内可直接用 `python scripts/tuitui_bot.py`）。
 依赖 `requests` 和 `PyYAML`（本机已安装；缺失时执行 `pip install requests pyyaml`）。
 
 ```bash
 # 验证凭据 / 查看机器人身份
 python .qoder/skills/tuitui-bot/scripts/tuitui_bot.py info
+# 返回示例: {"name": "运维机器人", "uid": "3000000000000000000", "account": "ops_bot"}
+
+# 获取群 ID：列出机器人所在的所有群（先要把机器人拉进目标群）
+python .qoder/skills/tuitui-bot/scripts/tuitui_bot.py groups
+# 返回示例: [{"group_id": "123456789", "name": "项目群"}]
 ```
 
-## 发送命令
+所有命令成功时输出 JSON 到 stdout；失败时以非零码退出并打印 `[错误] ...` 到 stderr。
 
-收件人三种写法（群聊与个人互斥）：
+## 命令一览
+
+| 命令 | 用途 | 备注 |
+| --- | --- | --- |
+| `info` | 查询机器人信息（名称/UID/账号），验证凭据 | |
+| `groups` | 列出机器人所在的所有群 | |
+| `send-text` | 发送文本（支持 Markdown） | |
+| `send-image` | 发送图片（JPG/PNG/GIF） | 需上传文件 |
+| `send-file` | 发送文件/附件（任意类型，≤100MB） | 需上传文件 |
+| `send-interactive` | 发送交互式卡片 | 仅支持恰好一个接收目标 |
+| `recall` | 撤回已发送的消息 | 仅支持恰好一个接收目标 |
+
+## 收件人指定
+
 `--to-account <推推账号>` / `--to-uid <UID>`（均可重复，最多 100 个）/ `--to-group <群ID>`。
+群聊与个人互斥；发送/撤回类命令必须指定至少一个目标。
+
+## 发送命令
 
 ```bash
 # 文本（支持 Markdown）
 python .../tuitui_bot.py send-text --to-account zhangsan --text "部署完成"
 
-# 图片（仅 JPG/PNG/GIF；支持本地路径或 http(s) URL）
+# 按 UID 发送
+python .../tuitui_bot.py send-text --to-uid 7652669648945546 --text "你好"
+
+# 图片（仅 JPG/PNG/GIF；支持本地路径或 http(s) URL，可用 --filename 自定义上传名）
 python .../tuitui_bot.py send-image --to-account zhangsan --file ./chart.png
+python .../tuitui_bot.py send-image --to-account zhangsan --file ./data.jpg --filename report.jpg
 
 # 文件/附件（任意类型，≤100MB；支持本地路径或 URL）
 python .../tuitui_bot.py send-file --to-group 123456 --file ./报告.pdf
@@ -40,10 +66,17 @@ python .../tuitui_bot.py send-interactive --to-account zhangsan \
 
 # 交互式卡片：完整结构（复杂卡片用 JSON 文件）
 python .../tuitui_bot.py send-interactive --to-account zhangsan --card card.json
+
+# 撤回已发送的消息（--msgid 为消息 ID，可从发送接口响应中取）
+python .../tuitui_bot.py recall --to-account zhangsan --msgid "1024_abc123"
+python .../tuitui_bot.py recall --to-group 123456 --msgid "1024_abc123"
 ```
 
 `--action` 简写格式：`按钮文本`、`文本=name` 或 `文本=name:value`；
 也可直接传 JSON 串（须含 `text` 和 `name` 字段）。
+
+交互式卡片参数：`--head`（头部文案，配合 `--head-bgcolor` 设置底色如 `#3873FA`）、
+`--title`、`--content`、`--url`（卡片整体跳转链接）、`--action`（可多次）。
 
 多机器人时加 `--bot <名称>` 选择；`--config <路径>` 可换配置文件。
 
@@ -57,11 +90,12 @@ bots:
   ceshi:
     appid: "3199004586"
     secret: "<secret>"
-    # api_base: 可选，默认官方生产环境
+    # api_base: 可选，默认官方生产环境 https://im.live.360.cn:8282/robot
 ```
 
 用户提供新机器人的 appid/secret 时，在 `bots` 下追加一个条目即可，
 不要把 secret 输出到对话或日志中。
+appid/secret 缺失或未找到指定机器人时，脚本会打印配置格式提示并以非零码退出。
 
 ## 交互式卡片结构（--card JSON）
 
@@ -86,6 +120,7 @@ bots:
 - 交互卡片发送后如需处理按钮点击，需在推推后台配置交互回调（Webhook），
   本 skill 只负责发送，不接收回调。
 - 消息内容支持 Markdown，交互式卡片除外。
+- 图片仅支持 JPG/PNG/GIF 后缀，其余扩展名上传时打印警告（仍会尝试发送）。
 - API 失败时脚本以非零码退出并打印 `errcode` 与响应详情；
   响应中的 `trans_id` 可提供给推推技术支持排查。
 - 官方 SDK 文档: <https://www.npmjs.com/package/@qihoo/tuitui-bot-sdk>
