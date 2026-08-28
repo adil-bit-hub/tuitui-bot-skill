@@ -1,6 +1,6 @@
-# tuitui-bot — 360 推推机器人 Qoder Skill
+# tuitui-bot — 360 推推机器人 xxxx Skill
 
-一个用 **Python** 实现的 [Qoder Skill](https://qoder.com)，等价于官方
+一个用 **Python** 实现的 [xxxx Skill](https://xxxx.com)，等价于官方
 [`@qihoo/tuitui-bot-sdk`](https://www.npmjs.com/package/@qihoo/tuitui-bot-sdk)（Node.js），
 通过推推机器人开放 API 向指定人员或群聊发送：
 
@@ -11,11 +11,11 @@
 
 ## 安装
 
-将本仓库克隆到你的工作区，使 skill 位于 `.qoder/skills/tuitui-bot/`：
+将本仓库克隆到你的工作区，使 skill 位于 `.xxxx/skills/tuitui-bot/`：
 
 ```bash
-git clone <本仓库> .qoder/skills/tuitui-bot-tmp
-# 或直接复制 tuitui-bot 目录到 .qoder/skills/ 下
+git clone <本仓库> .xxxx/skills/tuitui-bot-tmp
+# 或直接复制 tuitui-bot 目录到 .xxxx/skills/ 下
 ```
 
 依赖：
@@ -29,7 +29,7 @@ pip install requests pyyaml
 复制示例配置并填入你的机器人 appid / secret：
 
 ```bash
-cp .qoder/skills/tuitui-bot/config.example.yaml .qoder/skills/tuitui-bot/config.yaml
+cp .xxxx/skills/tuitui-bot/config.example.yaml .xxxx/skills/tuitui-bot/config.yaml
 ```
 
 ```yaml
@@ -46,29 +46,29 @@ bots:
 
 ```bash
 # 校验凭据
-python .qoder/skills/tuitui-bot/scripts/tuitui_bot.py info
+python .xxxx/skills/tuitui-bot/scripts/tuitui_bot.py info
 
 # 文本
-python .qoder/skills/tuitui-bot/scripts/tuitui_bot.py send-text \
+python .xxxx/skills/tuitui-bot/scripts/tuitui_bot.py send-text \
   --to-account zhangsan --text "部署完成"
 
 # 图片
-python .qoder/skills/tuitui-bot/scripts/tuitui_bot.py send-image \
+python .xxxx/skills/tuitui-bot/scripts/tuitui_bot.py send-image \
   --to-account zhangsan --file ./chart.png
 
 # 文件
-python .qoder/skills/tuitui-bot/scripts/tuitui_bot.py send-file \
+python .xxxx/skills/tuitui-bot/scripts/tuitui_bot.py send-file \
   --to-group 123456 --file ./报告.pdf
 
 # 交互式卡片
-python .qoder/skills/tuitui-bot/scripts/tuitui_bot.py send-interactive \
+python .xxxx/skills/tuitui-bot/scripts/tuitui_bot.py send-interactive \
   --to-account zhangsan --head "审批请求" --content "是否同意发布？" \
   --action "同意=approve" --action "拒绝=reject"
 ```
 
 收件人：`--to-account`（推推账号）/ `--to-uid` / `--to-group`（群聊，与个人互斥）。
 
-在 Qoder 中可直接对话触发，例如：“给 fengzhao 发一张图”“发个审批卡片给某群”。
+在 xxxx 中可直接对话触发，例如：“给 fengzhao 发一张图”“发个审批卡片给某群”。
 
 ## API 说明
 
