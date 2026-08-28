@@ -1,0 +1,11 @@
+# 推推机器人凭据配置示例
+# 复制为 config.yaml 后填入真实凭据；config.yaml 已被 .gitignore 排除
+# 通过 scripts/tuitui_bot.py --bot <名称> 切换机器人
+
+default: mybot
+
+bots:
+  mybot:
+    appid: "你的appid"
+    secret: "你的secret"
+    # api_base: 可选，默认 https://im.live.360.cn:8282/robot
