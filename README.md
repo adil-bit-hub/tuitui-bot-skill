@@ -1,6 +1,6 @@
-# tuitui-bot — 360 推推机器人 Qoder Skill
+# tuitui-bot — 360 推推机器人 Python 客户端 / Agent Skill
 
-一个用 **Python** 实现的 [Qoder](https://qoder.com) Skill，等价于官方
+一个用 **Python** 实现的推推机器人客户端，等价于官方
 [`@qihoo/tuitui-bot-sdk`](https://www.npmjs.com/package/@qihoo/tuitui-bot-sdk)（Node.js），
 通过推推机器人开放 API 完成：
 
@@ -12,11 +12,15 @@
 - 列出机器人所在的**群**（获取群 ID）
 - 多机器人凭据管理（YAML 配置）
 
+它首先是一个**命令行工具**，人工可直接使用；同时附带 `SKILL.md` 指令文档，
+可被任何能执行 shell 命令的 AI Agent 加载为 skill
+（[Qoder](https://qoder.com)、Claude Code、Cursor 等），不绑定任何特定平台。
+
 ## 目录结构
 
 ```
 tuitui-bot-skill/
-├── SKILL.md              # Skill 指令文档（供 Qoder Agent 读取）
+├── SKILL.md              # Agent 指令文档（供各类 AI Agent 读取）
 ├── README.md
 ├── config.example.yaml   # 凭据配置示例（入库）
 ├── config.yaml           # 你的真实凭据（不入库，需自行创建）
@@ -26,24 +30,16 @@ tuitui-bot-skill/
 
 ## 安装
 
-### 作为 Qoder Skill 安装（推荐）
-
-将本仓库克隆到工作区的 `.qoder/skills/tuitui-bot` 目录：
-
 ```bash
-git clone https://github.com/adil-bit-hub/tuitui-bot-skill.git .qoder/skills/tuitui-bot
-```
-
-安装依赖：
-
-```bash
+git clone https://github.com/adil-bit-hub/tuitui-bot-skill.git
+cd tuitui-bot-skill
 pip install requests pyyaml
 ```
 
 ### 配置凭据
 
 ```bash
-cp .qoder/skills/tuitui-bot/config.example.yaml .qoder/skills/tuitui-bot/config.yaml
+cp config.example.yaml config.yaml
 ```
 
 ```yaml
@@ -57,18 +53,14 @@ bots:
 
 > ⚠️ `config.yaml` 含敏感凭据，已被 `.gitignore` 排除，**切勿提交到仓库**。
 
+### 作为 Agent Skill 安装（可选）
+
+- **Qoder**：克隆到工作区的 `.qoder/skills/tuitui-bot` 目录即可被自动发现。
+- **其他 Agent**：按各自平台的 skill/工具约定放置本目录，或让 Agent 读取 `SKILL.md` 后通过 CLI 操作。
+
 ## 使用
 
-### 在 Qoder 中对话触发（推荐）
-
-安装为 Skill 后直接对 Agent 说自然语言即可，例如：
-
-- “给 fengzhao 发消息：记得打卡”
-- “把这张图发给 fengzhao”
-- “给某群发一个审批卡片”
-- “撤回刚才发的消息”
-
-### 命令行使用
+### 命令行
 
 ```bash
 # 校验凭据 / 查看机器人身份
@@ -108,6 +100,15 @@ python scripts/tuitui_bot.py recall --to-account zhangsan --msgid "7678769490990
 
 其他选项：`--bot <名称>` 切换机器人；`--config <路径>` 指定配置文件。
 
+### 在 AI Agent 中对话触发
+
+加载本 skill 后直接对 Agent 说自然语言即可，例如：
+
+- “给 fengzhao 发消息：记得打卡”
+- “把这张图发给 fengzhao”
+- “给某群发一个审批卡片”
+- “撤回刚才发的消息”
+
 ## API 说明
 
 底层为推推机器人开放 API（逆向自官方 SDK v1.0.19）：
@@ -124,7 +125,7 @@ python scripts/tuitui_bot.py recall --to-account zhangsan --msgid "7678769490990
 
 ## 注意事项
 
-- 交互卡片如需处理按钮点击回调，需在推推后台配置 Webhook；本 Skill 只负责发送与撤回。
+- 交互卡片如需处理按钮点击回调，需在推推后台配置 Webhook；本工具只负责发送与撤回。
 - 消息内容支持 Markdown，交互式卡片除外。
 - 推推为 360 内部产品，机器人能力开通与使用请遵循公司内部规范。
 - 官方 SDK 文档：<https://www.npmjs.com/package/@qihoo/tuitui-bot-sdk>

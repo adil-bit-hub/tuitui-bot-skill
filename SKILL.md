@@ -6,21 +6,24 @@ description: 通过360推推机器人向指定人员或群聊发送文本、图�
 # 推推机器人消息发送
 
 Python 实现的推推机器人客户端，等价于官方 `@qihoo/tuitui-bot-sdk`。
+本 skill 不绑定任何特定平台：任何能执行 shell 命令的 AI Agent
+（Qoder、Claude Code、Cursor 等）均可加载使用，也可作为 CLI 工具直接人工操作。
 凭据保存在 [config.yaml](config.yaml)，脚本位于 [scripts/tuitui_bot.py](scripts/tuitui_bot.py)。
 
 ## 快速开始
 
-脚本路径固定为 `.qoder/skills/tuitui-bot/scripts/tuitui_bot.py`（相对工作区；
-在本 skill 目录内可直接用 `python scripts/tuitui_bot.py`）。
-依赖 `requests` 和 `PyYAML`（本机已安装；缺失时执行 `pip install requests pyyaml`）。
+在 skill 目录内直接执行：`python scripts/tuitui_bot.py <命令>`。
+若安装为 Qoder skill，约定路径为 `.qoder/skills/tuitui-bot/scripts/tuitui_bot.py`；
+其他 Agent 平台按各自约定放置，或直接以本目录为工具目录调用。
+依赖 `requests` 和 `PyYAML`（缺失时执行 `pip install requests pyyaml`）。
 
 ```bash
 # 验证凭据 / 查看机器人身份
-python .qoder/skills/tuitui-bot/scripts/tuitui_bot.py info
+python scripts/tuitui_bot.py info
 # 返回示例: {"name": "运维机器人", "uid": "3000000000000000000", "account": "ops_bot"}
 
 # 获取群 ID：列出机器人所在的所有群（先要把机器人拉进目标群）
-python .qoder/skills/tuitui-bot/scripts/tuitui_bot.py groups
+python scripts/tuitui_bot.py groups
 # 返回示例: [{"group_id": "123456789", "name": "项目群"}]
 ```
 
@@ -47,29 +50,29 @@ python .qoder/skills/tuitui-bot/scripts/tuitui_bot.py groups
 
 ```bash
 # 文本（支持 Markdown）
-python .../tuitui_bot.py send-text --to-account zhangsan --text "部署完成"
+python scripts/tuitui_bot.py send-text --to-account zhangsan --text "部署完成"
 
 # 按 UID 发送
-python .../tuitui_bot.py send-text --to-uid 7652669648945546 --text "你好"
+python scripts/tuitui_bot.py send-text --to-uid 7652669648945546 --text "你好"
 
 # 图片（仅 JPG/PNG/GIF；支持本地路径或 http(s) URL，可用 --filename 自定义上传名）
-python .../tuitui_bot.py send-image --to-account zhangsan --file ./chart.png
-python .../tuitui_bot.py send-image --to-account zhangsan --file ./data.jpg --filename report.jpg
+python scripts/tuitui_bot.py send-image --to-account zhangsan --file ./chart.png
+python scripts/tuitui_bot.py send-image --to-account zhangsan --file ./data.jpg --filename report.jpg
 
 # 文件/附件（任意类型，≤100MB；支持本地路径或 URL）
-python .../tuitui_bot.py send-file --to-group 123456 --file ./报告.pdf
+python scripts/tuitui_bot.py send-file --to-group 123456 --file ./报告.pdf
 
 # 交互式卡片：简写方式（仅允许恰好一个接收目标）
-python .../tuitui_bot.py send-interactive --to-account zhangsan \
+python scripts/tuitui_bot.py send-interactive --to-account zhangsan \
   --head "审批请求" --content "是否同意发布上线？" \
   --action "同意=approve" --action "拒绝=reject"
 
 # 交互式卡片：完整结构（复杂卡片用 JSON 文件）
-python .../tuitui_bot.py send-interactive --to-account zhangsan --card card.json
+python scripts/tuitui_bot.py send-interactive --to-account zhangsan --card card.json
 
 # 撤回已发送的消息（--msgid 为消息 ID，可从发送接口响应中取）
-python .../tuitui_bot.py recall --to-account zhangsan --msgid "1024_abc123"
-python .../tuitui_bot.py recall --to-group 123456 --msgid "1024_abc123"
+python scripts/tuitui_bot.py recall --to-account zhangsan --msgid "1024_abc123"
+python scripts/tuitui_bot.py recall --to-group 123456 --msgid "1024_abc123"
 ```
 
 `--action` 简写格式：`按钮文本`、`文本=name` 或 `文本=name:value`；
