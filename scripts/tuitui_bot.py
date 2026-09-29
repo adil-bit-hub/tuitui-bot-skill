@@ -88,6 +88,34 @@ class TuituiBot:
         data = self._request("GET", "/group/robot/in")
         return data.get("groups") or []
 
+    def pull_messages(self, group=None, account=None, relative_time="today",
+                      start_time=None, end_time=None, cursor="0", limit=100,
+                      order_asc=False):
+        """拉取历史消息。group 拉群聊，account 拉单聊，二者互斥。
+        relative_time 如 today / yesterday / last_7_days；
+        也可用 start_time/end_time 指定绝对时间范围。"""
+        payload = {"cursor": str(cursor), "limit": limit,
+                   "order_asc": order_asc}
+        if relative_time:
+            payload["relative_time"] = relative_time
+        else:
+            if start_time:
+                payload["start_time"] = start_time
+            if end_time:
+                payload["end_time"] = end_time
+        if group:
+            endpoint = "/message/group/sync"
+            payload["group_id"] = group
+        else:
+            endpoint = "/message/single/sync"
+            payload["user"] = account
+        data = self._request("POST", endpoint, payload)
+        return {
+            "messages": [parse_message(m) for m in (data.get("msgs") or [])],
+            "has_more": data.get("has_more", False),
+            "cursor": str(data.get("cursor", "0")),
+        }
+
     def recall(self, target, message_id):
         """撤回已发送的消息。target 为 build_target 产物，须为单一目标。"""
         payload = {}
@@ -166,6 +194,36 @@ class TuituiBot:
 # ---------------------------------------------------------------------------
 # 工具函数
 # ---------------------------------------------------------------------------
+
+def parse_message(body: dict) -> dict:
+    """解析拉取到的消息，提取常用字段并保留原始数据(raw)。"""
+    data = body.get("data") or {}
+    ref = data.get("ref")
+    msg = {
+        "message_id": str(data.get("msgid", "")),
+        "from_account": body.get("user_account", ""),
+        "from_name": body.get("user_name", ""),
+        "msg_type": data.get("msg_type") or data.get("msgtype"),
+        "text": data.get("text"),
+        "at_me": data.get("at_me"),
+    }
+    if data.get("group_id"):
+        msg["type"] = "group"
+        msg["group_id"] = str(data.get("group_id"))
+        msg["group_name"] = data.get("group_name")
+    else:
+        msg["type"] = "single"
+    if ref:
+        msg["reply_to"] = {
+            "message_id": str(ref.get("msgid", "")),
+            "is_me": ref.get("is_me") is True,
+            "from_account": ref.get("user_account", ""),
+            "from_name": ref.get("user_name", ""),
+            "text": ref.get("text"),
+        }
+    msg["raw"] = body
+    return msg
+
 
 def build_target(accounts=None, uids=None, group=None) -> dict:
     """构造消息目标。群聊与个人不可混用；个人最多 100 个。"""
@@ -316,6 +374,24 @@ def main(argv=None):
 
     p = sub.add_parser("groups", help="列出机器人所在的所有群及其群 ID")
 
+    p = sub.add_parser("pull", help="拉取历史消息(群聊或单聊)")
+    p.add_argument("--to-account", metavar="ACCOUNT",
+                   help="单聊对象推推账号，与 --to-group 互斥")
+    p.add_argument("--to-group", metavar="GROUP", help="目标群聊 ID")
+    p.add_argument("--time", default="today", metavar="RELATIVE",
+                   help="相对时间范围: today/yesterday/this_week/last_week/"
+                        "this_month/last_month/this_year 或 last_{N}_{unit}"
+                        "(unit: minutes/hours/days/months)，默认 today")
+    p.add_argument("--start-time", help="绝对起始时间(指定后 --time 失效)")
+    p.add_argument("--end-time", help="绝对结束时间")
+    p.add_argument("--limit", type=int, default=100,
+                   help="单页条数 1~100，默认 100")
+    p.add_argument("--cursor", default="0",
+                   help="分页游标，首次为 0，翻页用上次响应中的 cursor")
+    p.add_argument("--asc", action="store_true", help="按时间升序返回")
+    p.add_argument("--raw", action="store_true",
+                   help="输出服务端原始响应，不做字段解析")
+
     p = sub.add_parser("recall", help="撤回已发送的消息(仅限单一目标)")
     add_target_args(p)
     p.add_argument("--msgid", required=True, help="要撤回的消息 ID")
@@ -356,6 +432,38 @@ def main(argv=None):
 
         if args.command == "groups":
             emit(bot.list_groups())
+            return 0
+
+        if args.command == "pull":
+            if bool(args.to_account) == bool(args.to_group):
+                raise ValueError(
+                    "pull 必须指定 --to-account 或 --to-group 之一(不可同时)")
+            if not 1 <= args.limit <= 100:
+                raise ValueError("--limit 取值范围为 1~100")
+            relative = None if args.start_time else args.time
+            if args.raw:
+                # 原始模式：直接透传服务端响应
+                payload = {"cursor": str(args.cursor), "limit": args.limit,
+                           "order_asc": args.asc}
+                if relative:
+                    payload["relative_time"] = relative
+                else:
+                    payload["start_time"] = args.start_time
+                    if args.end_time:
+                        payload["end_time"] = args.end_time
+                if args.to_group:
+                    endpoint = "/message/group/sync"
+                    payload["group_id"] = args.to_group
+                else:
+                    endpoint = "/message/single/sync"
+                    payload["user"] = args.to_account
+                emit(bot._request("POST", endpoint, payload))
+                return 0
+            emit(bot.pull_messages(
+                group=args.to_group, account=args.to_account,
+                relative_time=relative, start_time=args.start_time,
+                end_time=args.end_time, cursor=args.cursor,
+                limit=args.limit, order_asc=args.asc))
             return 0
 
         target = build_target(args.to_account, args.to_uid, args.to_group)

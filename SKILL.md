@@ -1,6 +1,6 @@
 ---
 name: tuitui-bot
-description: 通过360推推机器人向指定人员或群聊发送文本、图片、文件和交互式卡片消息，并可撤回已发送消息。当用户要求给推推里的某人/某群发消息、发图、发文件、发交互卡片、撤回消息，或管理推推机器人凭据(新增/查看机器人配置)时使用。
+description: 通过360推推机器人向指定人员或群聊发送文本、图片、文件和交互式卡片消息，拉取历史聊天记录，并可撤回已发送消息。当用户要求给推推里的某人/某群发消息、发图、发文件、发交互卡片、撤回消息、查看/拉取聊天记录，或管理推推机器人凭据(新增/查看机器人配置)时使用。
 ---
 
 # 推推机器人消息发送
@@ -39,6 +39,7 @@ python scripts/tuitui_bot.py groups
 | `send-image` | 发送图片（JPG/PNG/GIF） | 需上传文件 |
 | `send-file` | 发送文件/附件（任意类型，≤100MB） | 需上传文件 |
 | `send-interactive` | 发送交互式卡片 | 仅支持恰好一个接收目标 |
+| `pull` | 拉取历史消息(群聊或单聊) | 支持相对时间/分页 |
 | `recall` | 撤回已发送的消息 | 仅支持恰好一个接收目标 |
 
 ## 收件人指定
@@ -74,6 +75,29 @@ python scripts/tuitui_bot.py send-interactive --to-account zhangsan --card card.
 python scripts/tuitui_bot.py recall --to-account zhangsan --msgid "1024_abc123"
 python scripts/tuitui_bot.py recall --to-group 123456 --msgid "1024_abc123"
 ```
+
+## 拉取历史消息（pull）
+
+```bash
+# 拉群聊今天的消息（默认 --time today，最多 100 条）
+python scripts/tuitui_bot.py pull --to-group 123456
+
+# 拉单聊最近 7 天的消息
+python scripts/tuitui_bot.py pull --to-account zhangsan --time last_7_days
+
+# 分页翻页：用上一页响应里的 cursor
+python scripts/tuitui_bot.py pull --to-group 123456 --time last_30_minutes --limit 50 --cursor "76599..."
+```
+
+- `--to-group` 与 `--to-account` 互斥，必须指定其一；群 ID 可用 `groups` 命令获取。
+- `--time` 相对时间：`today` / `yesterday` / `day_before_yesterday` / `this_week` /
+  `last_week` / `this_month` / `last_month` / `this_year`，或 `last_{N}_{unit}`
+  （unit ∈ `minutes`/`hours`/`days`/`months`）；也可用 `--start-time`/`--end-time` 指定绝对范围。
+- 输出 `{messages, has_more, cursor}`；`has_more=true` 时用返回的 `cursor` 继续翻页。
+- 每条消息含 `message_id`、`from_account`、`from_name`、`msg_type`、`text`、
+  `at_me`、`reply_to`（引用块，仅引用消息时有）及原始数据 `raw`；
+  `message_id`/`group_id` 为大数，一律当字符串处理。
+- `--raw` 直接输出服务端原始响应；`--asc` 按时间升序返回。
 
 `--action` 简写格式：`按钮文本`、`文本=name` 或 `文本=name:value`；
 也可直接传 JSON 串（须含 `text` 和 `name` 字段）。

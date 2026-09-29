@@ -8,6 +8,7 @@
 - 发送**图片**（JPG / PNG / GIF）
 - 发送**文件 / 附件**（任意类型，≤100MB）
 - 发送**交互式卡片**（按钮、表单、跳转链接）
+- **拉取历史消息**（群聊/单聊，支持相对时间与分页）
 - **撤回**已发送的消息
 - 列出机器人所在的**群**（获取群 ID）
 - 多机器人凭据管理（YAML 配置）
@@ -88,6 +89,10 @@ python scripts/tuitui_bot.py send-interactive --to-account zhangsan --card card.
 
 # 撤回消息（--msgid 取自发送响应中的 msgid）
 python scripts/tuitui_bot.py recall --to-account zhangsan --msgid "7678769490990369626"
+
+# 拉取历史消息（群聊今天 / 单聊最近 7 天，--cursor 翻页）
+python scripts/tuitui_bot.py pull --to-group 123456
+python scripts/tuitui_bot.py pull --to-account zhangsan --time last_7_days
 ```
 
 收件人三种写法（群聊与个人互斥，个人最多 100 个）：
@@ -108,6 +113,7 @@ python scripts/tuitui_bot.py recall --to-account zhangsan --msgid "7678769490990
 - “把这张图发给 zhangsan”
 - “给某群发一个审批卡片”
 - “撤回刚才发的消息”
+- “看看那个群今天聊了什么”
 
 ## API 说明
 
@@ -116,6 +122,8 @@ python scripts/tuitui_bot.py recall --to-account zhangsan --msgid "7678769490990
 - Base：`https://im.live.360.cn:8282/robot`，所有请求以 `appid` + `secret` 查询参数鉴权
 - `POST /message/custom/send` — 发送 text / image / attachment / interactive 消息
 - `POST /message/custom/modify` — 撤回消息等
+- `POST /message/group/sync` — 拉取群聊历史消息
+- `POST /message/single/sync` — 拉取单聊历史消息
 - `POST /media/upload?type=image|file` — 上传媒体，返回 `media_id`
 - `GET /prop/get` — 查询机器人属性
 - `GET /group/robot/in` — 列出机器人所在群
